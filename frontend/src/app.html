@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+	<script src="https://kit.fontawesome.com/2f7f63dc5b.js" crossorigin="anonymous"></script>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<style>
+		* {
+			font-family: 'Poppins', sans-serif;
+		}
+
+		body {
+			color: hsl(0, 0%, 10%);
+			font-weight: 500;
+		}
+
+		.text-primary {
+			color: #647DFF !important;
+		}
+
+		.border-light {
+			border-color: hsl(0, 0%, 90%) !important;
+		}
+		
+		.rounded {
+			border-radius: 10px !important;
+		}
+
+		button {
+			font-weight: 500 !important;
+			font-size: 14px !important;
+		}
+
+		:root {
+			--bs-primary: #647DFF !important;
+		}
+
+		.bg-primary {
+			background-color: #647DFF !important;
+		}
+	</style>
+	%sveltekit.head%
+</head>
+
+<body data-sveltekit-preload-data="hover">
+	<div style="display: contents">%sveltekit.body%</div>
+</body>
+
+</html>
