@@ -10,11 +10,16 @@
     export let title = "";
     export let date: Date;
     export let amount = 0;
+    export let id = "";
     export let category: ExpenseCategory = ExpenseCategory.SONSTIGES;
+    export let deleteAction: (id: string) => void = () => {};
+    export let editAction: (id: string) => void = () => {};
 
-    let container: HTMLDivElement;
+    let myElement: HTMLDivElement;
     let showDeleteDiv = false;
     let showEditDiv = false;
+    let deleteActive = false;
+    let editActive = false;
     let translateX = 0;
     let velocityX = 0;
     let animationFrameId: any;
@@ -22,57 +27,89 @@
     const smoothReturnSpeed = 0.1;
     const maxMomentumDistance = 200;
     const friction = 0.9;
+    let isAnimatingBack = false;
 
     onMount(() => {
         import("hammerjs").then(({ default: Hammer }) => {
-            const hammer = new Hammer(container);
-            hammer.get("pan").set({ direction: Hammer.DIRECTION_HORIZONTAL });
-            hammer.on("panleft panright", handlePan);
-            hammer.on("panend", handlePanEnd);
-            hammer.on("panstart", handlePanStart);
+            const hammer = new Hammer(myElement);
+
+            let posX = 0,
+                lastPosX = 0,
+                velocityX = 0;
+
+            hammer.on("panstart", (ev) => {
+                // If an animation is in progress, reset the element
+                if (isAnimatingBack) {
+                    myElement.style.transition = "";
+                    myElement.style.transform = "translateX(0px)";
+                    posX = 0;
+                    lastPosX = 0;
+                    isAnimatingBack = false;
+                    showDeleteDiv = false;
+                    showEditDiv = false;
+                    editActive = false;
+                    deleteActive = false;
+                }
+            });
+
+            hammer.on("panmove", (ev) => {
+                // Calculate position and apply transformation
+                posX = lastPosX + ev.deltaX;
+                velocityX = ev.velocityX;
+                myElement.style.transform = `translateX(${posX}px)`;
+                if (posX > 0) {
+                    showDeleteDiv = true;
+                    showEditDiv = false;
+                } else {
+                    showDeleteDiv = false;
+                    showEditDiv = true;
+                }
+                // if it is dragged 25% of the width, activate the delete button
+                if (posX > myElement.offsetWidth * 0.4) {
+                    deleteActive = true;
+                } else {
+                    deleteActive = false;
+                }
+
+                // if it is dragged 25% of the width, activate the edit button
+                if (posX < -myElement.offsetWidth * 0.4) {
+                    editActive = true;
+                } else {
+                    editActive = false;
+                }
+            });
+
+            hammer.on("panend", () => {
+                // Apply momentum based on velocity
+                posX += velocityX * 50; // adjust multiplier for desired momentum
+                myElement.style.transform = `translateX(${posX}px)`;
+
+                if (editActive) {
+                    editAction(id);
+                }
+
+                if (deleteActive) {
+                    deleteAction(id);
+                }
+
+                // Animate back to original position with ease-out
+                setTimeout(() => {
+                    isAnimatingBack = true;
+                    myElement.style.transition = "transform 0.3s ease-out";
+                    myElement.style.transform = "translateX(0px)";
+                    lastPosX = 0;
+                    editActive = false;
+                    deleteActive = false;
+                }, 100); // adjust timeout for desired momentum duration
+
+                // Reset transition after animation
+                myElement.addEventListener("transitionend", () => {
+                    myElement.style.transition = "";
+                    isAnimatingBack = false;
+                });
+            });
         });
     });
-
-    function handlePan(event: any) {
-        translateX = event.deltaX;
-        if (translateX > 0) {
-            showEditDiv = true;
-            showDeleteDiv = false;
-        } else {
-            showDeleteDiv = true;
-            showEditDiv = false;
-        }
-    }
-
-    const handlePanEnd = () => {
-        isAnimating = true;
-
-        function animate() {
-            if (Math.abs(velocityX) < 0.1 && Math.abs(translateX) > 1) {
-                // Smoothly glide back to the original position
-                translateX *= smoothReturnSpeed;
-            } else if (Math.abs(translateX) <= 1) {
-                // Item is close enough to the original position
-                translateX = 0;
-                cancelAnimationFrame(animationFrameId);
-                isAnimating = false;
-            } else {
-                // Continue decelerating
-                translateX += velocityX * 20;
-                velocityX *= friction;
-                animationFrameId = requestAnimationFrame(animate);
-            }
-        }
-
-        animationFrameId = requestAnimationFrame(animate);
-    };
-
-    const handlePanStart = () => {
-        if (isAnimating) {
-            cancelAnimationFrame(animationFrameId);
-            isAnimating = false;
-        }
-    };
 </script>
 
 <div class="position-relative" style="width: 100%">
@@ -80,17 +117,22 @@
         style={`border-radius: 10px; position: absolute; pointer-events: none; background-color: #F33C3C; visibility: ${
             showDeleteDiv ? "visible" : "hidden"
         }; z-index: -1`}
-        class="w-100 h-100"
-    ></div>
+        class="w-100 h-100 d-flex align-items-center px-4 text-white"
+    >
+        <i style={`transform: ${deleteActive ? 'scale(1.6)' : 'scale(1)'}; transition: transform .3s ease-out`} class="fa-solid fa-trash"></i>
+    </div>
     <div
         style={`border-radius: 10px; position: absolute; pointer-events: none; background-color: #647DFF; visibility: ${
             showEditDiv ? "visible" : "hidden"
         }; z-index: -1`}
-        class="w-100 h-100"
-    ></div>
-    <div bind:this={container}
+        class="w-100 h-100 d-flex align-items-center justify-content-end px-4 text-white"
+    >
+        <i style={`transform: ${editActive ? 'scale(1.6)' : 'scale(1)'}; transition: transform .3s ease-out`} class="fa-solid fa-pen"></i>
+    </div>
+    <div
+        bind:this={myElement}
         class="d-flex align-items-center bg-white"
-        style={`transform: translateX(${translateX}px); border: 1px solid hsl(0, 0%, 90%); border-radius: 10px; padding: 10px 20px 10px 0`}
+        style={`transform: translateX(${translateX}px); border: 1px solid hsl(0, 0%, 90%); border-radius: 10px; padding: 10px 20px 10px 0;`}
     >
         <div
             style={`height: 12px; width: 10px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 12px; background-color: #${getCategoryColor(

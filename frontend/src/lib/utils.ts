@@ -11,15 +11,26 @@ export function formatDate(date: Date): string {
     } else if (diffDays === 1) {
         // If the date was yesterday, return "gestern"
         return "gestern";
-    } else if (diffDays > 1 && diffDays <= 7) {
-        // If the date was between 2 and 7 days ago
-        return `vor ${Math.floor(diffDays)} Tagen`;
     } else {
-        // If the date is older than 7 days, return in "dd. MMM" format
+        // Define month names
         const monthNames = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
-        return `${inputDate.getDate().toString().padStart(2, '0')}. ${monthNames[inputDate.getMonth()]}`;
+        
+        // Format for dates from the current year
+        if (date.getFullYear() === now.getFullYear()) {
+            if (diffDays > 1 && diffDays <= 7) {
+                // If the date was between 2 and 7 days ago
+                return `vor ${Math.floor(diffDays)} Tagen`;
+            } else {
+                // If the date is older than 7 days but from the current year
+                return `${inputDate.getDate().toString().padStart(2, '0')}. ${monthNames[inputDate.getMonth()]}`;
+            }
+        } else {
+            // If the date is from a different year
+            return `${inputDate.getDate().toString().padStart(2, '0')}. ${monthNames[inputDate.getMonth()]} ${inputDate.getFullYear()}`;
+        }
     }
 }
+
 
 export function formatEuro(number: number): string {
     // Convert the number to a fixed decimal string to handle floating point precision issues
