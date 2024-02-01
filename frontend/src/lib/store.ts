@@ -81,7 +81,7 @@ export const selectedMonthExpensesByNewest = derived(
 );
 
 export async function fetchCurrentMonthExpenses() {
-  const res = await fetch(`${PUBLIC_BASE_URL}/expenses`);
+  const res = await fetch(`${PUBLIC_BASE_URL}/expenses/`);
   const expenses = await res.json();
   currentMonthExpenses.set(expenses.map((expense: any) => {
     return {
@@ -92,7 +92,7 @@ export async function fetchCurrentMonthExpenses() {
 }
 
 export async function fetchExpenses(month: number, year: number) {
-  const res = await fetch(`${PUBLIC_BASE_URL}/expenses?month=${month + 1}&year=${year}`);
+  const res = await fetch(`${PUBLIC_BASE_URL}/expenses/?month=${month + 1}&year=${year}/`);
   const expenses = await res.json();
   return expenses.map((expense: any) => {
     return {
@@ -103,14 +103,14 @@ export async function fetchExpenses(month: number, year: number) {
 }
 
 export async function fetchBudget() {
-  const res = await fetch(`${PUBLIC_BASE_URL}/budget`);
+  const res = await fetch(`${PUBLIC_BASE_URL}/budget/`);
   const newBudget = (await res.json())?.budget ?? 0;
   budget.set(newBudget);
   return budget;
 }
 
 export async function fetchExpensesPerCategoryForSelectedYear(year: number) {
-  const res = await fetch(`${PUBLIC_BASE_URL}/overview/${year}`);
+  const res = await fetch(`${PUBLIC_BASE_URL}/overview/${year}/`);
   const expensesPerCategory = await res.json();
   return expensesPerCategory;
 }

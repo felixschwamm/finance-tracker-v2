@@ -59,7 +59,7 @@
     $: barWidths = calculateBarWidthsForAllCategories(selectedMonth);
 
     async function fetchExpensesPerCategory(year: number): Promise<ExpensesPerCategory[]> {
-        const res = await fetch(PUBLIC_BASE_URL + "/overview/" + year);
+        const res = await fetch(PUBLIC_BASE_URL + "/overview/" + year + "/");
         const json = await res.json();
         return json;
     }

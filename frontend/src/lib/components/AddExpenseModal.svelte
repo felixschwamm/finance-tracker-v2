@@ -50,7 +50,7 @@
             await editData();
             return;
         }
-        const res = await fetch(PUBLIC_BASE_URL + "/expenses", {
+        const res = await fetch(PUBLIC_BASE_URL + "/expenses/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
