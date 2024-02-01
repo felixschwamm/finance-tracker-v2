@@ -2,7 +2,7 @@
 
     import { createEventDispatcher } from "svelte";
 
-    const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher<{changeSelected: number}>();
 
     export let selected = 0;
     export let items: string[] = [];

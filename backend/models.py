@@ -7,7 +7,7 @@ class Expense(BaseModel):
     name: str
     amount: float
     category: Literal["ESSEN", "FREIZEIT", "GESUNDHEIT", "KLEIDUNG", "TRANSPORT", "WOHNEN", "SONSTIGES"] = "SONSTIGES"
-    date: datetime = datetime.now()
+    date: Optional[datetime] = None
 
 class Budget(BaseModel):
     budget: float
@@ -27,7 +27,8 @@ class ExpenseWithId(Expense):
             "EXPENSE_AMOUNT": Decimal(str(self.amount)),
             "EXPENSE_CATEGORY": self.category,
             "EXPENSE_DATE": Decimal(str(self.date.timestamp())),
-            "EXPENSE_USER_DATE": f"{year}#{month}#{user_id}",
+            "EXPENSE_USER_DATE": f"{user_id}#{year}#{month}",
+            "EXPENSE_USER_YEAR": f"{user_id}#{year}",
         }
     
     @classmethod

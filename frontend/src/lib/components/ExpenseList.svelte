@@ -1,99 +1,126 @@
 <script lang="ts">
-    import type { ExpenseCategory } from "$lib/utils";
     import { onMount } from "svelte";
-    import Dropdown from "./Dropdown.svelte";
     import ExpenseListItem from "./ExpenseListItem.svelte";
     import Select from "./Select.svelte";
+    import type { Expense } from "$lib/types";
+    import {
+        addExpenseModalOpened,
+        selectedMonth,
+        selectedMonthExpensesByMostExpensive,
+        selectedMonthExpensesByNewest,
+        addExpenseModalData,
+        addExpenseModalEditMode,
+        selectedMonthExpenses,
+
+        currentMonthExpenses
+
+    } from "$lib/store";
+    import MonthPicker from "./MonthPicker.svelte";
+    import { ExpenseCategory } from "$lib/utils";
+
+    let mounted = false;
 
     onMount(() => {
-        updateExpenses(ExpenseQuerySort.NEWEST);
+        mounted = true;
     });
 
-    let items: ExpenseListItem[] = [];
-
-    type ExpenseListItem = {
-        date: Date;
-        title: string;
-        amount: number;
-        category?: ExpenseCategory;
-        id: string;
-    };
-
-    enum ExpenseQuerySort {
-        NEWEST = "NEWEST",
-        EXPENSIVE = "EXPENSIVE",
+    $: {
+        if (mounted) {
+            if (selectedSorting === 0) {
+                items = $selectedMonthExpensesByNewest;
+            } else {
+                items = $selectedMonthExpensesByMostExpensive;
+            }
+        }
     }
 
-    async function updateExpenses(sort: ExpenseQuerySort): Promise<void> {
-        const res = await fetch("http://192.168.178.146:8000/expenses?sort=" + sort.toString())
-        const json = await res.json();
-        items = json.map((item: any) => ({
-            title: item.name,
-            date: new Date(item.date),
-            amount: item.amount,
-            category: item.category,
-            id: item.id,
-        }));
-    }
+    let items: Expense[] = [];
+    let selectedSorting: number = 0;
 
     async function deleteExpense(id: string): Promise<void> {
         const res = await fetch(`http://192.168.178.146:8000/expenses/${id}`, {
             method: "DELETE",
         });
         if (res.ok) {
-            items = items.filter((item) => item.id !== id);
+            $currentMonthExpenses  = $currentMonthExpenses.filter(
+                (item) => item.id !== id,
+            );
+            $selectedMonthExpenses = $selectedMonthExpenses.filter(
+                (item) => item.id !== id,
+            );
         }
     }
 
-    const dropdownItems = [
-        "Jan 2024",
-        "Feb 2024",
-        "Mär 2024",
-        "Apr 2024",
-        "Mai 2024",
-        "Jun 2024",
-        "Jul 2024",
-        "Aug 2024",
-        "Sep 2024",
-        "Okt 2024",
-        "Nov 2024",
-        "Dez 2024"
-    ]
+    function formatCurrency(value: number): string {
+        // Convert the number to a string using fixed point notation
+        let fixedValue = value.toFixed(2);
+
+        // Replace dot with comma for the decimal part
+        fixedValue = fixedValue.replace(".", ",");
+
+        // Add thousand separators
+        let parts = fixedValue.split(",");
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+        return parts.join(",");
+    }
+
+    function editExpense(id: string): void {
+        let amount = items.find((item) => item.id === id)?.amount;
+        let amountString;
+        if (amount) {
+            amountString = formatCurrency(amount);
+        }
+        $addExpenseModalData = {
+            id,
+            amount: amountString ?? "",
+            name: items.find((item) => item.id === id)?.name ?? "",
+            category:
+                items.find((item) => item.id === id)?.category ??
+                ExpenseCategory.SONSTIGES,
+        };
+        $addExpenseModalOpened = true;
+        $addExpenseModalEditMode = true;
+    }
 </script>
 
-<div>
+<div class="mb-3">
     <div class="d-flex align-items-center justify-content-between">
         <span style="font-size: 26px; font-weight: 600;">Ausgaben</span>
     </div>
     <div class="d-flex justify-content-between align-items-center mb-2">
-        <Select items={["neu", "teuer"]} on:changeSelected={event => updateExpenses(event.detail === 0 ? ExpenseQuerySort.NEWEST : ExpenseQuerySort.EXPENSIVE)}></Select>
-        <Dropdown items={dropdownItems}></Dropdown>
+        <Select
+            items={["neu", "teuer"]}
+            on:changeSelected={(event) => (selectedSorting = event.detail)}
+        ></Select>
+        <MonthPicker
+            on:changeSelected={(event) => ($selectedMonth = event.detail)}
+        ></MonthPicker>
     </div>
     {#if items.length === 0}
-        <div class="d-flex justify-content-center align-items-center border border-light rounded px-2" style="height: 100px">
-            <span class="text-muted" style="text-align: center; font-size: 14px">Keine Ausgaben für den ausgewählten Zeitraum</span>
+        <div
+            class="d-flex justify-content-center align-items-center border border-light rounded px-2"
+            style="height: 100px"
+        >
+            <span class="text-muted" style="text-align: center; font-size: 14px"
+                >Keine Ausgaben für den ausgewählten Zeitraum</span
+            >
         </div>
     {/if}
     {#each items as item, index}
         <ExpenseListItem
             amount={item.amount}
             date={item.date}
-            title={item.title}
+            name={item.name}
             id={item.id}
             category={item.category}
-            editAction={() => console.log("edit")}
+            editAction={(id) => editExpense(id)}
             deleteAction={deleteExpense}
         ></ExpenseListItem>
         {#if items.length !== index}
             <div class="p-1"></div>
         {/if}
     {/each}
-    <div class="d-flex justify-content-center mb-4" style="margin-top: -17px">
-        <button
-            class="btn bg-white text-primary border-light rounded"
-            style="z-index: 99;">2 mehr anzeigen</button
-        >
-    </div>
 </div>
 
 <style>

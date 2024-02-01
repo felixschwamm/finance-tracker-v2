@@ -7,7 +7,7 @@
     } from "$lib/utils";
     import { onMount } from "svelte";
 
-    export let title = "";
+    export let name = "";
     export let date: Date;
     export let amount = 0;
     export let id = "";
@@ -21,12 +21,6 @@
     let deleteActive = false;
     let editActive = false;
     let translateX = 0;
-    let velocityX = 0;
-    let animationFrameId: any;
-    let isAnimating = false;
-    const smoothReturnSpeed = 0.1;
-    const maxMomentumDistance = 200;
-    const friction = 0.9;
     let isAnimatingBack = false;
 
     onMount(() => {
@@ -135,13 +129,13 @@
         style={`transform: translateX(${translateX}px); border: 1px solid hsl(0, 0%, 90%); border-radius: 10px; padding: 10px 20px 10px 0;`}
     >
         <div
-            style={`height: 12px; width: 10px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 12px; background-color: #${getCategoryColor(
+            style={`height: 26px; margin-left: -1px; width: 8px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; margin-right: 12px; background-color: #${getCategoryColor(
                 category,
             )}`}
         ></div>
         <div class="d-l">
             <span class="d-block" style="font-size: 16px; margin-bottom: -4px"
-                >{title}</span
+                >{name}</span
             >
             <span class="text-muted" style="font-size: 14px;"
                 >{formatDate(date)}</span

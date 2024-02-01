@@ -62,20 +62,51 @@ export enum ExpenseCategory {
     SONSTIGES = 'SONSTIGES'
 }
 
+export function getMonthShortName(month: number): string {
+    switch (month) {
+        case 1:
+            return 'Jan'
+        case 2:
+            return 'Feb'
+        case 3:
+            return 'Mär'
+        case 4:
+            return 'Apr'
+        case 5:
+            return 'Mai'
+        case 6:
+            return 'Jun'
+        case 7:
+            return 'Jul'
+        case 8:
+            return 'Aug'
+        case 9:
+            return 'Sep'
+        case 10:
+            return 'Okt'
+        case 11:
+            return 'Nov'
+        case 12:
+            return 'Dez'
+        default:
+            return ''
+    }
+}
+
 export function getCategoryColor(category: string) {
     switch (category) {
         case ExpenseCategory.WOHNEN:
-            return 'AF6E49'
+            return 'B30000'
         case ExpenseCategory.ESSEN:
-            return '52D450'
+            return '7C1158'
         case ExpenseCategory.GESUNDHEIT:
-            return 'F33C3C'
+            return '4421AF'
         case ExpenseCategory.KLEIDUNG:
-            return 'C266D1'
+            return '1A53FF'
         case ExpenseCategory.TRANSPORT:
-            return 'FADB3C'
+            return '00B7C7'
         case ExpenseCategory.FREIZEIT:
-            return '4CCAE5'
+            return '5AD45A'
         case ExpenseCategory.SONSTIGES:
             return 'A6A6A6'
     }

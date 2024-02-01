@@ -1,180 +1,153 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from "svelte";
+    import { onMount, afterUpdate } from "svelte";
 
-    const dispatch = createEventDispatcher<{ changeCurrency: number, changeText: string }>();
-
-    let auxSpan: HTMLSpanElement;
-    let amountInput: HTMLInputElement;
+    let auxiliarySpan: HTMLSpanElement;
+    let amountInputElement: HTMLInputElement;
 
     export let fontSize = 40;
-    export let maxWidth = 0.7;
+    export let maxWidthProportion = 0.7;
     export let type: "currency" | "text" = "currency";
-
-    let focus;
-    let realValue: number | string = (type === "currency" ? 0 : "");
+    export let value: string = "";
 
     onMount(() => {
-        updateAmountInputWidth();
-
-        focus = () => {
-            amountInput.focus();
-        };
+        updateInputElementWidth();
     });
 
-    function updateAmountInputWidth() {
-        amountInput.style.width = auxSpan.offsetWidth + "px";
+    afterUpdate(() => {
+        updateValueInDom();
+    });
+
+    export function focus() {
+        amountInputElement.focus();
     }
 
-    function updateAmoutInputFontSize(maxRelWidth: number) {
+    function updateInputElementWidth() {
+        amountInputElement.style.width = auxiliarySpan.offsetWidth + "px";
+    }
+
+    function updateInputElementFontSize(maxRelativeWidth: number) {
         const originalFontSize = fontSize;
-        let currentFontSize = parseInt(
+        let currentFontSize = parseFloat(
             window
-                .getComputedStyle(amountInput, null)
+                .getComputedStyle(amountInputElement, null)
                 .getPropertyValue("font-size"),
         );
 
-        if (
-            amountInput.offsetWidth > window.innerWidth * maxRelWidth &&
-            currentFontSize > 1
-        ) {
-            // Reduce font size if input overflows
-            while (
-                amountInput.offsetWidth > window.innerWidth * maxRelWidth &&
-                currentFontSize > 1
-            ) {
-                currentFontSize--;
-                setAmountInputFontSize(currentFontSize);
-            }
-        } else if (
-            amountInput.offsetWidth < window.innerWidth * maxRelWidth &&
-            currentFontSize < originalFontSize
-        ) {
-            // Increase font size if there's space, but don't exceed original size
-            while (
-                amountInput.offsetWidth < window.innerWidth * maxRelWidth &&
-                currentFontSize < originalFontSize
-            ) {
-                currentFontSize++;
-                setAmountInputFontSize(currentFontSize);
-                if (amountInput.offsetWidth > window.innerWidth * maxRelWidth) {
-                    currentFontSize--;
-                    setAmountInputFontSize(currentFontSize);
-                    break;
-                }
-            }
-        }
+        adjustFontSizeToFit(currentFontSize, maxRelativeWidth, originalFontSize);
     }
 
-    function setAmountInputFontSize(size: number) {
-        auxSpan.style.fontSize = size + "px";
-        amountInput.style.fontSize = size + "px";
-        updateAmountInputWidth();
-    }
-
-    function handleCurrencyInputChange(event: Event) {
-        const target = event.target as HTMLInputElement;
-        let value = target.value;
-
-        if (value.length > 14) {
-            target.value = target.value.slice(0, -1);
-            return;
-        }
-
-        // Remove non-numeric characters
-        value = value.replace(/\D/g, "");
-
-        // Ensure at least two characters for cents
-        while (value.length < 2) {
-            value = "0" + value;
-        }
-
-        // Split into cents and main part
-        let cents = value.slice(-2);
-        let mainPart = value.slice(0, -2);
-
-        // If mainPart is empty, set it to 0
-        if (mainPart === "") {
-            mainPart = "0";
+    function adjustFontSizeToFit(currentFontSize: number, maxRelativeWidth: number, originalFontSize: number) {
+        if (amountInputElement.offsetWidth > window.innerWidth * maxRelativeWidth) {
+            decreaseFontSizeUntilFit(currentFontSize, maxRelativeWidth);
         } else {
-            // Remove leading zeros from mainPart
-            mainPart = parseInt(mainPart, 10).toString();
+            increaseFontSizeUntilMaxOrFit(currentFontSize, maxRelativeWidth, originalFontSize);
         }
-
-        // Combine main part and cents with comma
-        value = mainPart + "," + cents;
-
-        // Insert dots for thousands
-        let start = value.length - 6;
-        while (start > 1) {
-            value = value.slice(0, start) + "." + value.slice(start);
-            start -= 3;
-        }
-
-        // Set the formatted value back to the input
-        target.value = value;
-
-        auxSpan.innerHTML = value;
-
-        // Set the real value
-        realValue = parseFloat(value.replace(/\./g, "").replace(/,/g, "."));
-
-        // Dispatch the event
-        dispatch("changeCurrency", realValue);
-
     }
 
-    function handleTextInputChange(event: Event) {
+    function decreaseFontSizeUntilFit(currentFontSize: number, maxRelativeWidth: number) {
+        while (amountInputElement.offsetWidth > window.innerWidth * maxRelativeWidth && currentFontSize > 1) {
+            currentFontSize--;
+            setInputElementFontSize(currentFontSize);
+        }
+    }
+
+    function increaseFontSizeUntilMaxOrFit(currentFontSize: number, maxRelativeWidth: number, originalFontSize: number) {
+        while (amountInputElement.offsetWidth < window.innerWidth * maxRelativeWidth && currentFontSize < originalFontSize) {
+            currentFontSize++;
+            setInputElementFontSize(currentFontSize);
+            if (amountInputElement.offsetWidth > window.innerWidth * maxRelativeWidth) {
+                currentFontSize--;
+                setInputElementFontSize(currentFontSize);
+                break;
+            }
+        }
+    }
+
+    function setInputElementFontSize(fontSize: number) {
+        auxiliarySpan.style.fontSize = fontSize + "px";
+        amountInputElement.style.fontSize = fontSize + "px";
+        updateInputElementWidth();
+    }
+
+    function formatCurrencyInput(inputValue: string): string {
+        inputValue = inputValue.replace(/\D/g, "");
+
+        while (inputValue.length < 2) {
+            inputValue = "0" + inputValue;
+        }
+
+        let cents = inputValue.slice(-2);
+        let mainPart = parseInt(inputValue.slice(0, -2), 10);
+        if (isNaN(mainPart)) {
+            mainPart = 0;
+        }
+        let formattedValue = mainPart + "," + cents;
+
+        for (let start = formattedValue.length - 6; start > 1; start -= 3) {
+            formattedValue = formattedValue.slice(0, start) + "." + formattedValue.slice(start);
+        }
+
+        return formattedValue;
+    }
+
+    function handleInputChange(event: Event) {
         const target = event.target as HTMLInputElement;
-        let value = target.value;
+        let inputValue = target.value;
 
-        if (value.length > 40) {
-            target.value = target.value.slice(0, -1);
+        if (inputValue.length > (type === "currency" ? 14 : 40)) {
+            target.value = inputValue.slice(0, -1);
             return;
         }
-
-        // replace all non-text characters and only allow one space in a row
-        value = value.replace(/[^a-zA-ZäöüÄÖÜß ]/g, "").replace(/  +/g, " ");
-        target.value = value;
-
-        if (value.length === 0) {
-            auxSpan.innerHTML = "Eingeben...";
-            return;
-        }
-
-        auxSpan.innerHTML = value.replace(/ /g, "&nbsp;");
-
-        // Set the real value
-        realValue = value;
-
-        // Dispatch the event
-        dispatch("changeText", realValue);
-    }
-
-    function handleAmountInputChange(event: Event) {
 
         if (type === "currency") {
-            handleCurrencyInputChange(event);
+            inputValue = formatCurrencyInput(inputValue);
         } else {
-            handleTextInputChange(event);
+            inputValue = inputValue.replace(/[^a-zA-ZäöüÄÖÜß ]/g, "").replace(/  +/g, " ");
         }
 
-        updateAmoutInputFontSize(maxWidth);
-        updateAmountInputWidth();
+        target.value = inputValue;
+        auxiliarySpan.innerHTML = inputValue.replace(/ /g, "&nbsp;");
+        if (!inputValue) {
+            auxiliarySpan.innerHTML = type === "currency" ? "0,00" : "Eingeben...";
+        }
+        if (type === "text" && inputValue === "") {
+            auxiliarySpan.innerHTML = "Eingeben...";
+        }
+        value = inputValue;
+        updateInputElementFontSize(maxWidthProportion);
+
+    }
+
+    function updateValueInDom() {
+        if (amountInputElement) {
+            if (type === "currency") {
+                amountInputElement.value = value && value !== "" ? formatCurrencyInput(value) : "";
+                auxiliarySpan.innerHTML = value && value !== "" ? amountInputElement.value.replace(/ /g, "&nbsp;") : "0,00";
+            } else if (type === "text") {
+                amountInputElement.value = value;
+                auxiliarySpan.innerHTML = value.replace(/ /g, "&nbsp;");
+                if (!value) {
+                    auxiliarySpan.innerHTML = "Eingeben...";
+                }
+            }
+            updateInputElementWidth();
+            updateInputElementFontSize(maxWidthProportion);
+        }
     }
 </script>
 
 <div class="d-flex align-items-center" style="margin-left: 21px;">
     <input
-        on:input={handleAmountInputChange}
-        bind:this={amountInput}
+        on:input={handleInputChange}
+        bind:this={amountInputElement}
         class="p-0"
         type={type === 'currency' ? 'tel' : 'text'}
         style={`text-align: end; font-size: ${fontSize}px; border: 0; width: 30px; border: 0; outline: 0;`}
         placeholder={type === 'currency' ? '0,00' : 'Eingeben...'}
     />
-    <span style={`font-size: 26px; ${amountInput?.value === '' ? 'color: hsl(0, 0%, 60%);' : ''}`} class:invisible={type === 'text'}>&nbsp;€</span>
+    <span style={`font-size: 26px; ${amountInputElement?.value === '' ? 'color: hsl(0, 0%, 60%);' : ''}`} class:invisible={type === 'text'}>&nbsp;€</span>
     <span
         style={`font-size: ${fontSize}px; font-weight: 400; visibility: hidden; pointer-events: none; position: fixed`}
-        bind:this={auxSpan}>{ type === 'currency' ? '0,00' : 'Eingeben...' }</span
+        bind:this={auxiliarySpan}>{ type === 'currency' ? '0,00' : 'Eingeben...' }</span
     >
 </div>

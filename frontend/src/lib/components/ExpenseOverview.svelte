@@ -3,6 +3,7 @@
     import Dropdown from "./Dropdown.svelte";
     import ExpenseOverviewChart from "./ExpenseOverviewChart.svelte";
     import Select from "./Select.svelte";
+    import YearPicker from "./YearPicker.svelte";
 
     enum ExpenseChartTimeframe {
         YEAR = "YEAR",
@@ -13,12 +14,9 @@
         [K in ExpenseCategory]: number;
     };
 
-    export let loadExpensesPerCategory: (
-        year: number,
-    ) => Promise<ExpensesPerCategory[]>;
-
     let selectedTimeframeIndex: number = 0;
     let selectedTimeframe: ExpenseChartTimeframe;
+    let selectedYear: number = new Date().getFullYear();
 
     $: {
         if (selectedTimeframeIndex === 0) {
@@ -28,15 +26,14 @@
         }
     }
 
-    $: console.log(selectedTimeframe);
+    function handleSelectedYearChange(newYear: number) {
+        selectedYear = newYear;
+    }
+
 </script>
 
 <div>
     <span style="font-size: 26px; font-weight: 600;">Überblick</span>
-    <div class="mb-2">
-        <Dropdown
-            items={["2023", "2024", "2025"]}
-        ></Dropdown>
-    </div>
-    <ExpenseOverviewChart {loadExpensesPerCategory}></ExpenseOverviewChart>
+    <YearPicker on:changeSelected={event => handleSelectedYearChange(event.detail)}></YearPicker>
+    <ExpenseOverviewChart selectedYear={selectedYear}></ExpenseOverviewChart>
 </div>

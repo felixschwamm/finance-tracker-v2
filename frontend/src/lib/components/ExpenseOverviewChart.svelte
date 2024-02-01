@@ -1,11 +1,29 @@
 <script lang="ts">
+    import { PUBLIC_BASE_URL } from "$env/static/public";
+    import { expensesPerCategoryForSelectedYear, fetchExpensesPerCategoryForSelectedYear } from "$lib/store";
     import { ExpenseCategory, getCategoryColor } from "$lib/utils";
+    import { onMount } from "svelte";
 
     type ExpensesPerCategory = {
         [K in ExpenseCategory]: number;
     };
 
-    let selectedYear: number = 2024;
+    let mounted = false;
+
+    onMount(() => {
+        mounted = true;
+    });
+
+    export let selectedYear: number = 2024;
+
+    $: mounted && updateExpensesPerCategoryForSelectedYear(selectedYear);
+    $: $expensesPerCategoryForSelectedYear.length !== 0 && update($expensesPerCategoryForSelectedYear);
+
+    function updateExpensesPerCategoryForSelectedYear(year: number) {
+        fetchExpensesPerCategoryForSelectedYear(year).then((expenses) => {
+            $expensesPerCategoryForSelectedYear = expenses;
+        });
+    }
 
     let expensesPerCategory: ExpensesPerCategory[] = Array(12).fill({
         ESSEN: 0,
@@ -18,6 +36,7 @@
     });
 
     let selectedMonth: number = 0;
+
     let barWidths = {
         ESSEN: "0%",
         FREIZEIT: "0%",
@@ -37,19 +56,19 @@
         SONSTIGES: "0%",
     })
 
-    export let loadExpensesPerCategory: (
-        year: number,
-    ) => Promise<ExpensesPerCategory[]>;
-
     $: barWidths = calculateBarWidthsForAllCategories(selectedMonth);
-    $: barHeights = calculateBarHeight();
 
-    $: loadExpensesPerCategory(2024).then((expenses) => {
-        console.log(expenses);
+    async function fetchExpensesPerCategory(year: number): Promise<ExpensesPerCategory[]> {
+        const res = await fetch(PUBLIC_BASE_URL + "/overview/" + year);
+        const json = await res.json();
+        return json;
+    }
+
+    function update(expenses: ExpensesPerCategory[]) {
         expensesPerCategory = expenses;
         barWidths = calculateBarWidthsForAllCategories(selectedMonth);
         barHeights = calculateBarHeight();
-    });
+    }
 
     function getMaxExpense(expenses: ExpensesPerCategory): number {
         return Object.values(expenses).reduce((max, current) => {
@@ -116,6 +135,13 @@
         return date.toLocaleString("de-DE", { month: "short" });
     }
 
+    function formatCurrency(number: number): string {
+        // if the number has no decimal places keep it as it is and if it has more than 2 decimal places round it to 2 decimal places if it has less than 2 decimal places add 0 to the end
+        const formattedNumber = number.toFixed(2);
+        // replace . with , for the decimal part
+        return formattedNumber.replace(".", ",");
+    }
+
 </script>
 
 <div class="border rounded border-light overflow-hidden">
@@ -153,7 +179,7 @@
     <div>
         <div class="d-flex">
             <div
-                style="background-color: #f6f6f6; min-width: 120px"
+                style="background-color: #f6f6f6; min-width: 110px"
                 class="border-end border-light px-2"
             >
                 {#each Object.keys(ExpenseCategory) as category}
@@ -188,7 +214,7 @@
                             class="w-100 px-2"
                             style="line-height: var(--expenses-per-category-line-height); text-align: right; font-size: 14px;"
                         >
-                            {expensesPerCategory[selectedMonth][category]} €
+                            {formatCurrency(expensesPerCategory[selectedMonth][category])} €
                         </div>
                     {/each}
                 </div>

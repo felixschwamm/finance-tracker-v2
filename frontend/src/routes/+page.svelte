@@ -7,7 +7,10 @@ import ExpenseList from "$lib/components/ExpenseList.svelte";
     import Fab from "$lib/components/Fab.svelte";
     import Header from "$lib/components/Header.svelte";
     import MonthlyExpenseBar from "$lib/components/MonthlyExpenseBar.svelte";
-    import { ExpenseCategory } from "$lib/utils";  
+    import { ExpenseCategory } from "$lib/utils";
+    import auth from '$lib/authService';
+    import { onMount } from "svelte";
+    import { addExpenseModalData, addExpenseModalOpened } from "$lib/store";
 
     function loadExpensesPerCategory(year: number): Promise<{ [K in ExpenseCategory]: number }[]> {
         // just return 12 times the same array for now
@@ -39,25 +42,16 @@ import ExpenseList from "$lib/components/ExpenseList.svelte";
 
     }
 
-    let modalOpened = false;
 </script>
 
 <div class="p-4">
-    <AddExpenseModal bind:opened={modalOpened}></AddExpenseModal>
-    <Header remainingBudget={1500-950}></Header>
+    <AddExpenseModal></AddExpenseModal>
+    <Header></Header>
     <div class="p-2"></div>
-    <MonthlyExpenseBar budget={1500} expenses={{
-        'ESSEN': 100,
-        'GESUNDHEIT': 50,
-        'KLEIDUNG': 230,
-        'FREIZEIT': 20,
-        'WOHNEN': 400,
-        'TRANSPORT': 120,
-        'SONSTIGES': 30,
-    }}></MonthlyExpenseBar>
+    <MonthlyExpenseBar></MonthlyExpenseBar>
     <div class="p-2"></div>
     <ExpenseList></ExpenseList>
-    <ExpenseOverview {loadExpensesPerCategory}></ExpenseOverview>
+    <ExpenseOverview></ExpenseOverview>
     <div class="py-5"></div>
-    <Fab on:click={() => modalOpened = !modalOpened}></Fab>
+    <Fab on:click={() => $addExpenseModalOpened = true}></Fab>
 </div>
