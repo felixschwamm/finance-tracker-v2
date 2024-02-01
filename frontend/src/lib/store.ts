@@ -92,7 +92,7 @@ export async function fetchCurrentMonthExpenses() {
 }
 
 export async function fetchExpenses(month: number, year: number) {
-  const res = await fetch(`${PUBLIC_BASE_URL}/expenses/?month=${month + 1}&year=${year}/`);
+  const res = await fetch(`${PUBLIC_BASE_URL}/expenses/?month=${month + 1}&year=${year}`);
   const expenses = await res.json();
   return expenses.map((expense: any) => {
     return {
